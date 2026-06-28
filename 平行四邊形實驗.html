@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>等底等高與固定周長探索</title>
+  <style>
+    body {
+      font-family: "Microsoft JhengHei", sans-serif;
+      background-color: #ffffff;
+      margin: 0;
+      padding: 10px;
+      text-align: center;
+    }
+    .mode-selector {
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 8px 16px;
+      font-size: 15px;
+      font-weight: bold;
+      border: 2px solid #1e88e5;
+      background: white;
+      color: #1e88e5;
+      cursor: pointer;
+      border-radius: 6px;
+      margin: 0 5px;
+    }
+    button.active {
+      background: #1e88e5;
+      color: white;
+    }
+    svg {
+      background-color: #ffffff;
+      border: 2px solid #cfd8dc;
+      border-radius: 8px;
+    }
+    .grid-line {
+      stroke: #eceff1;
+      stroke-width: 1;
+    }
+    .control-panel {
+      background: #e8f5e9;
+      padding: 15px;
+      border-radius: 12px;
+      max-width: 520px;
+      margin: 10px auto;
+    }
+    input[type="range"] {
+      width: 80%;
+      cursor: pointer;
+    }
+    .report {
+      font-size: 16px;
+      line-height: 1.8;
+      text-align: left;
+      max-width: 520px;
+      margin: 10px auto;
+      padding: 10px;
+      background: #f9f9f9;
+      border-radius: 6px;
+    }
+    .highlight {
+      color: #d32f2f;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="mode-selector">
+    <button id="btn1" class="active" onclick="changeMode(1)">🟢 實驗 A：等底等高</button>
+    <button id="btn2" onclick="changeMode(2)">🟣 實驗 B：固定周長（扣條）</button>
+  </div>
+
+  <svg width="520" height="280" id="labSvg"></svg>
+
+  <div class="control-panel">
+    <label id="sliderLabel" for="labSlider"><b>👉 改變圖形歪斜度：</b></label><br>
+    <input type="range" id="labSlider" min="-120" max="120" value="0" oninput="renderLab()">
+  </div>
+
+  <div class="report" id="reportPanel"></div>
+
+<script>
+  const scale = 40;
+  let currentMode = 1; // 1: 等底等高, 2: 固定周長
+
+  function changeMode(mode) {
+    currentMode = mode;
+    document.getElementById('btn1').classList.toggle('active', mode === 1);
+    document.getElementById('btn2').classList.toggle('active', mode === 2);
+    
+    const slider = document.getElementById('labSlider');
+    if (mode === 1) {
+      document.getElementById('sliderLabel').innerHTML = "<b>👉 改變傾斜形狀（拉左右）：</b>";
+      slider.min = "-120"; slider.max = "120"; slider.value = "0";
+    } else {
+      document.getElementById('sliderLabel').innerHTML = "<b>👉 壓扁扣條（往右推）：</b>";
+      slider.min = "0"; slider.max = "75"; slider.value = "0";
+    }
+    renderLab();
+  }
+
+  function drawGrid() {
+    const svg = document.getElementById('labSvg');
+    svg.innerHTML = '';
+    for (let x = 0; x <= 520; x += scale) {
+      let l = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      l.setAttribute("x1", x); l.setAttribute("y1", 0); l.setAttribute("x2", x); l.setAttribute("y2", 280);
+      l.setAttribute("class", "grid-line"); svg.appendChild(l);
+    }
+    for (let y = 0; y <= 280; y += scale) {
+      let l = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      l.setAttribute("x1", 0); l.setAttribute("y1", y); l.setAttribute("x2", 520); l.setAttribute("y2", y);
+      l.setAttribute("class", "grid-line"); svg.appendChild(l);
+    }
+  }
+
+  function renderLab() {
+    drawGrid();
+    const svg = document.getElementById('labSvg');
+    const val = parseFloat(document.getElementById('labSlider').value);
+    const report = document.getElementById('reportPanel');
+
+    if (currentMode === 1) {
+      // 模式 1：等底等高（底4cm=160px，高3cm=120px） [cite: 243, 244]
+      let bx1 = 140, bx2 = 300, yBottom = 200, yTop = 80;
+      let tx1 = 140 + val, tx2 = 300 + val;
+      
+      let p = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+      p.setAttribute("points", `${bx1},${yBottom} ${bx2},${yBottom} ${tx2},${yTop} ${tx1},${yTop}`);
+      p.setAttribute("fill", "#e3f2fd"); p.setAttribute("stroke", "#1e88e5"); p.setAttribute("stroke-width", "2.5");
+      svg.appendChild(p);
+
+      // 畫固定高度虛線 [cite: 55]
+      let hLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      hLine.setAttribute("x1", "140"); hLine.setAttribute("y1", yBottom);
+      hLine.setAttribute("x2", "140"); hLine.setAttribute("y2", yTop);
+      hLine.setAttribute("stroke", "#d32f2f"); hLine.setAttribute("stroke-width", "2"); hLine.setAttribute("stroke-dasharray", "4,4");
+      svg.appendChild(hLine);
+
+      report.innerHTML = `
+        🔹 <b>底邊長度：</b> 固定不變 (4 公分) [cite: 197]<br>
+        🔹 <b>圖形高度：</b> 固定不變 (3 公分) [cite: 197]<br>
+        🎯 <b>發現：</b> 無論怎麼歪斜，<span class="highlight">面積永遠是 4 × 3 ＝ 12 平方公分</span>。等底等高的平行四邊形面積相等 [cite: 197, 244]！
+      `;
+    } else {
+      // 模式 2：固定周長（底4cm=160px，斜邊3cm=120px） [cite: 205, 248]
+      const base = 160, side = 120;
+      const rad = (90 - val) * Math.PI / 180;
+      const h = side * Math.sin(rad);
+      const dx = side * Math.cos(rad);
+      
+      let yBottom = 200, yTop = 200 - h;
+      let p1 = {x: 140, y: yBottom}, p2 = {x: 140 + base, y: yBottom};
+      let p3 = {x: 140 + base + dx, y: yTop}, p4 = {x: 140 + dx, y: yTop};
+
+      let p = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+      p.setAttribute("points", `${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`);
+      p.setAttribute("fill", "#f3e5f5"); p.setAttribute("stroke", "#8e24aa"); p.setAttribute("stroke-width", "2.5");
+      svg.appendChild(p);
+
+      const hCm = (h / scale).toFixed(1);
+      const area = (4 * hCm).toFixed(1);
+
+      report.innerHTML = `
+        🔸 <b>扣條邊長（周長）：</b> <span style="color:green;font-weight:bold;">固定不變</span> (兩邊各為 4cm 與 3cm) [cite: 250]<br>
+        🔸 <b>目前的高度：</b> 從 3.0 公分 變短為 <span class="highlight">${hCm}</span> 公分 [cite: 251]<br>
+        🎯 <b>發現：</b> 當圖形越推越扁，高變短，<span class="highlight">面積從 12 縮小為 ${area} 平方公分</span>。周長相同面積不一定相等 [cite: 251, 252]！
+      `;
+    }
+  }
+
+  window.onload = function() { renderLab(); };
+</script>
+</body>
+</html>
